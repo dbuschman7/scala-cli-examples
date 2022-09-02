@@ -1,2 +1,13 @@
 *.class
 *.log
+
+.bsp
+.metals
+.scala-build
+.vscode
+sbt/project/project
+sbt/project/target
+sbt/target
+sbt/.DS_Store
+sbt/version.txt
+.DS_Store
