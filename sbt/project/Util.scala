@@ -48,4 +48,17 @@ object Util {
 
   val Cctt: String =
     "compile->compile;test->test"
+
+
+  implicit class Augment(in: String) {
+    def echo: String = {
+      println("ECHO - " + in)
+      in
+    }
+
+    def runOrThrow: Unit = in.! match {
+      case 0 => //
+      case n => throw new IllegalStateException("Non-zero return code - $n")
+    }
+  }
 }

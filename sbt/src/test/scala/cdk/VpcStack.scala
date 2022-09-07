@@ -4,11 +4,13 @@ import software.amazon.awscdk.services.ec2.{SecurityGroup, SubnetConfiguration, 
 import software.amazon.awscdk.{Stack, StackProps}
 import software.constructs.Construct
 
-case class VpcStack(scope: Construct, props: StackProps) extends Stack(scope, "ScalaCliVpc", props) with Common {
+final case class VpcStack(scope: Construct, props: StackProps) 
+  extends Stack(scope, "ScalaCliVpc", props) 
+  with Common {
 
   import scala.jdk.CollectionConverters._
 
-  val subnets: Seq[SubnetConfiguration] = Seq(
+  lazy val subnets: Seq[SubnetConfiguration] = Seq(
     SubnetConfiguration
       .builder()
       .subnetType(SubnetType.PRIVATE_ISOLATED)
@@ -17,7 +19,7 @@ case class VpcStack(scope: Construct, props: StackProps) extends Stack(scope, "S
       .build()
   )
 
-  val vpc: Vpc = Vpc
+  lazy val vpc: Vpc = Vpc
     .Builder
     .create(this, "VPC")
     .vpcName(vpcName)
@@ -26,7 +28,7 @@ case class VpcStack(scope: Construct, props: StackProps) extends Stack(scope, "S
     .subnetConfiguration(subnets.asJava)
     .build()
 
-  val privateSecurityGroup: SecurityGroup = SecurityGroup.Builder
+  lazy val privateSecurityGroup: SecurityGroup = SecurityGroup.Builder
     .create(this, "PrivateSG")
     .securityGroupName(privateSG)
     .vpc(vpc)

@@ -11,3 +11,8 @@ sbt/target
 sbt/.DS_Store
 sbt/version.txt
 .DS_Store
+cdk.out
+sbt/.idea
+target
+cdk.context.json
+package-lock.json

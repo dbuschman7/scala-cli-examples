@@ -1,25 +1,33 @@
 package cdk
 
-import software.amazon.awscdk.App;
-import software.amazon.awscdk.Environment;
-import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.{App, Environment, StackProps}
 
-import org.scalatest.funsuite.AnyFunSuite
+object CdkSynth extends scala.App {
 
-class CdkSynth extends AnyFunSuite {
+  val account: String = sys.env.getOrElse("AWS_ACCOUNT", "UNKNOWN")
+  val region: String = sys.env.getOrElse("AWS_REGION", "UNKNOWN")
 
-  test("main") {
-    val app = new App()
+  val env = Environment.builder().region(region).account(account).build()
+  val props: StackProps = StackProps.builder().env(env).build()
 
-    new ExampleStack(app, "ExampleStack", StackProps.builder()
-//            .env(Environment.builder()
-//                        .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
-//                        .region(System.getenv("CDK_DEFAULT_REGION"))
-//                        .build()
-//                )
-            .build())
+  val app: App = new App()
 
-    app.synth()
+  val example = ExampleStack(app, "First", props)
+  //
+  //
 
-  }
+  val vpcStack = VpcStack(app, props)
+  vpcStack.vpc
+  vpcStack.privateSecurityGroup
+  //
+  //
+  val pingLambda = PingLambdaStack(app, props)
+  pingLambda.lambda
+
+  val dockerLambda = DockerLambdaStack(app, props)
+  dockerLambda.ecrRepository
+
+  //
+  app.synth()
+
 }

@@ -1,17 +1,34 @@
+
 package cdk
 
 import software.amazon.awscdk.services.ec2._
+import software.amazon.awscdk.services.ecr.Repository
 import software.amazon.awscdk.services.iam._
-import software.amazon.awscdk.services.lambda.{Alias, AssetCode, Code, Runtime, Function => LambdaFunction}
-import software.amazon.awscdk.services.logs.RetentionDays
-import software.amazon.awscdk.{Duration, Stack, StackProps}
+import software.amazon.awscdk.services.lambda.{Alias, EcrImageCode, Runtime, Function => LambdaFunction}
+import software.amazon.awscdk.{Duration, RemovalPolicy, Stack, StackProps}
 import software.constructs.Construct
 
-case class PingLambdaStack(scope: Construct, props: StackProps) extends Stack(scope, "PingLambda", props) with Common {
+case class DockerLambdaStack(scope: Construct, props: StackProps) extends Stack(scope, "DockerLambda", props) with Common {
 
   import scala.jdk.CollectionConverters._
 
-  val fullName: String = "ping-lambda"
+  lazy val ecrRepository: Repository = Repository
+    .Builder
+    .create(this, "EcrRepoDockerLambda")
+    .repositoryName("docker-lambda")
+    .imageScanOnPush(true)
+    .removalPolicy(RemovalPolicy.DESTROY)
+    .build()
+
+  lazy val ecrImageCode: EcrImageCode = EcrImageCode
+    .Builder
+    .create(ecrRepository)
+    .entrypoint(Seq("./lambda_entrypoint.sh").asJava)
+    .tagOrDigest("1.0.0")
+    .cmd(Seq("me.lightspeed7.lambda.LambdaMain::handleRequest").asJava)
+    .build()
+
+  val fullName: String = "docker-lambda"
 
   val vpc: IVpc = Vpc
     .fromLookup(
@@ -39,23 +56,20 @@ case class PingLambdaStack(scope: Construct, props: StackProps) extends Stack(sc
     .maxSessionDuration(Duration.hours(1))
     .build()
 
-  lazy val code: AssetCode = Code.fromAsset("/Users/dave/dev/dbuschman7/scala-cli-examples/target/upload.zip")
-
   lazy val lambda: LambdaFunction = LambdaFunction
     .Builder
     .create(this, fullName)
     .functionName(fullName)
     .description(fullName)
-    .runtime(Runtime.PROVIDED_AL2)
-    .handler("not.required")
+    .runtime(Runtime.FROM_IMAGE)
+    .handler("FROM_IMAGE")
     .securityGroups(sgs.asJava)
     .vpc(vpc)
-    .timeout(Duration.seconds(3))
+    .timeout(Duration.millis(500))
     .vpcSubnets(subnets)
-    .logRetention(RetentionDays.ONE_MONTH)
     .role(lambdaRole)
     .memorySize(100) // in MB
-    .code(code)
+    .code(ecrImageCode)
     .build()
 
   lazy val lambdaAliasDev: Alias = Alias.Builder
@@ -79,3 +93,4 @@ case class PingLambdaStack(scope: Construct, props: StackProps) extends Stack(sc
 
   lazy val managed: Seq[IManagedPolicy] = Seq(vpcAccess)
 }
+

@@ -4,7 +4,7 @@ import me.lightspeed7.examples.library.{ Library, Request, Response }
 import zio.lambda.{ Context, ZLambda }
 import zio.{ Task, ZIO }
 
-class LambdaMain extends ZLambda[Request, Response] {
+object LambdaMain extends ZLambda[Request, Response] {
 
   override def apply(event: Request, context: Context): Task[Response] =
     for {

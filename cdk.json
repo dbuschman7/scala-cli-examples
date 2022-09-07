@@ -1,8 +1,7 @@
 {
-  "app": "./run_cdk.sh",
+  "app": "scala-cli run --scala 2.13 --dependency software.amazon.awscdk:aws-cdk-lib:2.38.0 --main-class cdk.CdkSynth sbt/src/test/scala/cdk",
   "context": {
     "@aws-cdk/aws-apigateway:usagePlanKeyOrderInsensitiveId": true,
-    "@aws-cdk/core:enableStackNameDuplicates": "true",
     "aws-cdk:enableDiffNoFail": "true",
     "@aws-cdk/core:stackRelativeExports": "true",
     "@aws-cdk/aws-ecr-assets:dockerIgnoreSupport": true,
