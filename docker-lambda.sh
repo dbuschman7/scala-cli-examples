@@ -25,11 +25,15 @@ scala-cli package --scala 2.13 \
 	--dependency dev.zio::zio-lambda:1.0.0-RC6 \
 	--dependency dev.zio::zio-json:0.3.0-RC11 \
 	--main-class me.lightspeed7.examples.lambda.LambdaMain \
-	--docker  \
+	--docker \
         sbt/src/main/scala/me/lightspeed7/examples/library/Library.scala \
         sbt/src/main/scala/me/lightspeed7/examples/lambda/LambdaMain.scala \
-	--docker-image-repository ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/docker-image:${VERSION}
+	--docker-from amazoncorretto:11-alpine3.15 \
+	--docker-image-repository docker-image \
+	--docker-image-tag ${VERSION}
 
+# ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/
+# docker pull 
 
 # ############################
 # Create the lambda zip 

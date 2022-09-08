@@ -1,3 +1,11 @@
+// /////////////////////////////////
+//
+//> using scala "2.13"
+//> using platform "jvm"
+//> using lib "dev.zio::zio:2.0.0"
+//
+// //////////////////////////////////////
+
 package me.lightspeed7
 package examples
 
@@ -6,7 +14,7 @@ import zio.{Scope, ZIO, ZIOAppArgs}
 
 import java.io.IOException
 
-object Main extends zio.ZIOAppDefault {
+object SimpleApp extends zio.ZIOAppDefault {
 
   val myAppLogic: ZIO[Any, IOException, Unit] =
     for {

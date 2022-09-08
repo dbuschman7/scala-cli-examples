@@ -16,3 +16,8 @@ sbt/.idea
 target
 cdk.context.json
 package-lock.json
+sbt/tree.txt
+collectMain
+collectMain.build_artifacts.txt
+collectMax
+collectMax.build_artifacts.txt
