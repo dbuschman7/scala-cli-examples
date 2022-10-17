@@ -21,3 +21,5 @@ collectMain
 collectMain.build_artifacts.txt
 collectMax
 collectMax.build_artifacts.txt
+lambda/.idea
+example2/LambdaMain.jar
