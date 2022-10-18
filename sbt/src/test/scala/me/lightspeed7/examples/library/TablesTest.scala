@@ -17,16 +17,20 @@ class TablesTest extends AnyFunSuite with Matchers {
       case Success(num) => PrettyPrint.number(num)
     }
 
+    val rows = Seq(line1, line2)
 
-    val tableDef = PreFormattedBuild[Map[String, String]]("table")
-      .column("name") { line => fmt(line.getOrElse("name", "")) }
-      .column("1001") { line => fmt(line.getOrElse("1001", "")) }
-      .column("1002") { line => fmt(line.getOrElse("1002", "")) }
-      .column("1003") { line => fmt(line.getOrElse("1003", "")) }
-      .column("p90") { line => fmt(line.getOrElse("p90", "")) }
+    val numKeys: Set[String] = rows.flatMap(_.keySet).toSet.filter(in => Try(in.toLong).isSuccess)
 
-    val str = tableDef.generate(Seq(line1, line2))
-    println(str)
+
+    val tableDef = numKeys.toSeq.sorted.foldLeft {
+      PreFormattedBuild[Map[String, String]]("table")
+        .column("name") { line => fmt(line.getOrElse("name", "")) }
+    } { case (cDef, key) =>
+      cDef.column(key) { line => fmt(line.getOrElse(key, "")) }
+
+    }.column("p90") { line => fmt(line.getOrElse("p90", "")) }
+
+    println(tableDef.generate(Seq(line1, line2)))
   }
 
 }
