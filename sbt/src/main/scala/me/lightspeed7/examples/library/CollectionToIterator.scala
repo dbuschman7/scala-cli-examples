@@ -1,24 +1,22 @@
 package me.lightspeed7.examples.library
 
-object CollectionToStream {
+object CollectionToIterator {
 
+  def toEndlessStream[T](input: Seq[T]): Iterator[T] = {
 
-  def toEndlessStream[T](in: Seq[T]): Iterator[T] = {
-    val size = in.size
-
+//    println(s"Size = $input.size")
     new Iterator[T] {
       var idx: Int = 0
 
       override def hasNext: Boolean = true
 
       override def next(): T = {
-        println("next()")
-        val pos = idx % size
-        val value = in(pos)
-        idx += 1
-        value
+        val modulus: Int = idx % input.size
+//        println(s"next() - $idx - $modulus - ${input.size} ")
+        idx = idx + 1
+        input(modulus)
       }
     }
-    
+
   }
 }
