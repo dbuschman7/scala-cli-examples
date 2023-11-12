@@ -7,31 +7,28 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
 import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient
-import software.amazon.awssdk.services.cloudwatchlogs.model.{
-  DescribeLogStreamsRequest,
-  DescribeLogStreamsResponse,
-  GetLogEventsRequest,
-  LogStream,
-}
+import software.amazon.awssdk.services.cloudwatchlogs.model.{DescribeLogStreamsRequest, DescribeLogStreamsResponse, GetLogEventsRequest, LogStream}
 import software.amazon.awssdk.services.lambda.LambdaClient
-import software.amazon.awssdk.services.lambda.model.{ InvocationType, InvokeRequest, LogType }
+import software.amazon.awssdk.services.lambda.model.{InvocationType, InvokeRequest, LogType}
 import software.amazon.awssdk.services.ssm.SsmClient
-import software.amazon.awssdk.services.ssm.model.{ GetParametersByPathRequest, GetParametersByPathResponse, Parameter }
+import software.amazon.awssdk.services.ssm.model._
 
-import java.time.{ Duration => JTDuration }
+import java.net.URI
+import java.time.{Duration => JTDuration}
 import java.util.Properties
 import scala.annotation.tailrec
-import scala.concurrent.duration.{ Duration, FiniteDuration }
-import scala.util.{ Failure, Success, Try }
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.util.{Failure, Success, Try}
 
 object AWS {
+
   import scala.jdk.CollectionConverters._
 
   val account: String = sys.env.getOrElse("AWS_ACCOUNT", "UNKNOWN")
   val profile: String = sys.env.getOrElse("AWS_PROFILE", "UNKNOWN")
-  val region: Region  = Region.US_EAST_2
+  val region: Region = Region.US_EAST_2
 
-  val jtTimeout: JTDuration   = JTDuration.ofSeconds(60)
+  val jtTimeout: JTDuration = JTDuration.ofSeconds(10)
   val timeout: FiniteDuration = Duration.fromNanos(jtTimeout.toNanos)
 
   private lazy val credentials: ProfileCredentialsProvider = ProfileCredentialsProvider
@@ -61,6 +58,14 @@ object AWS {
 
   object Lambda {
 
+    val jtTimeout: JTDuration = JTDuration.ofMinutes(10)
+
+    private lazy val clientOverride: ClientOverrideConfiguration = ClientOverrideConfiguration
+      .builder()
+      .apiCallAttemptTimeout(jtTimeout)
+      .apiCallTimeout(jtTimeout)
+      .build()
+
     private lazy val lambdaClient: LambdaClient = LambdaClient
       .builder()
       .httpClientBuilder(httpClientBuilder)
@@ -72,10 +77,10 @@ object AWS {
     private def lambdaFullArn(name: String, tag: String): String = s"ard:aws:lambda:us-east-1:$account:function:$name:$tag"
 
     def invokeFunction(
-        name: String,
-        tag: String,
-        payload: String,
-      ): Either[String, String] = {
+                        name: String,
+                        tag: String,
+                        payload: String,
+                      ): Either[String, String] = {
       val bytes = SdkBytes.fromUtf8String(payload)
 
       val request =
@@ -96,7 +101,7 @@ object AWS {
           case _ =>
             Try(response.payload().asUtf8String()) match {
               case Failure(exception) => Left(exception.getMessage)
-              case Success(value)     => Right(value)
+              case Success(value) => Right(value)
             }
         }
       }
@@ -129,7 +134,7 @@ object AWS {
         .build()
 
       val response: DescribeLogStreamsResponse = logsClient.describeLogStreams(request)
-      val stream: LogStream                    = response.logStreams().asScala.maxBy(_.creationTime())
+      val stream: LogStream = response.logStreams().asScala.maxBy(_.creationTime())
 
       val sReq = GetLogEventsRequest
         .builder()
@@ -155,9 +160,10 @@ object AWS {
       .builder()
       .httpClientBuilder(httpClientBuilder)
       .credentialsProvider(credentials)
+      .endpointOverride(URI.create(""))
       .build()
 
-    def getFromSSM(pathPrefix: String): Properties = {
+    def getFromSSM(pathPrefix: String, parts:Seq[String]): Properties = {
 
       @tailrec
       def recurse(props: Properties, nextToken: Option[String]): Properties = {
@@ -166,7 +172,7 @@ object AWS {
             .getParametersByPath(
               GetParametersByPathRequest
                 .builder()
-                .path(pathPrefix)
+                .path(pathPrefix + parts.mkString("/", "/", ""))
                 .withDecryption(true)
                 .nextToken(nextToken.orNull)
                 .build()
@@ -178,17 +184,43 @@ object AWS {
         }
 
         Option(result.nextToken()) match {
-          case None       => props
+          case None => props
           case Some(next) => recurse(props, Some(next))
         }
       }
 
       recurse(new Properties(), None)
     }
+
+    def putStringValue(pathPrefix: String)(parts: Seq[String], value: String): Either[String, Long] = {
+      put(pathPrefix + parts.mkString("/", "/", ""), ParameterType.STRING, value)
+    }
+
+    def putStringListValue(pathPrefix: String)(parts: Seq[String], values: Seq[String]): Either[String, Long] = {
+      put(pathPrefix + parts.mkString("/", "/", ""), ParameterType.STRING_LIST, values.mkString(","))
+    }
+
+    def putSecureStringValue(pathPrefix: String)(parts: Seq[String], value: String): Either[String, Long] = {
+      put(pathPrefix + parts.mkString("/", "/", ""), ParameterType.SECURE_STRING, value)
+    }
+
+    private def put[T](key: String, `type`: ParameterType, value: T): Either[String, Long] = {
+      val req = PutParameterRequest.builder()
+        .keyId(key)
+        .`type`(`type`)
+        .value(value.toString)
+        .build()
+
+      Try(client.putParameter(req)) match {
+        case Failure(exception) => Left(exception.getMessage)
+        case Success(response) => Right(response.version().toLong)
+      }
+    }
   }
 }
 
 object Retry {
+
   import scala.concurrent.duration._
 
   @tailrec

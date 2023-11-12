@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import scala.collection.JavaConverters._
 
-class CronJobGeneratorTest extends AnyFunSuite with Matchers with KubernetesAbstraction {
+class KubernetesGeneratorTest extends AnyFunSuite with Matchers with KubernetesAbstraction {
 
   val client: ApiClient = Config.defaultClient
   Configuration.setDefaultApiClient(client)

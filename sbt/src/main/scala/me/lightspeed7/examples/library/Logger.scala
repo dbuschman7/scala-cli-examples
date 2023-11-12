@@ -1,4 +1,4 @@
-package me.lightspeed7.sk8s.aiq.k8s
+package me.lightspeed7.examples.library
 
 trait Logger {
 
