@@ -1,0 +1,27 @@
+version: '3.1'
+networks:
+    mongodb_net:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                # Change this subnet range if it conflicts with your personal/work network
+                - subnet: 192.168.213.0/24
+                  gateway: 192.168.213.1
+services:
+    mongodb:
+        image: mongo:3.6.23
+        container_name: mongodb
+        command: --serviceExecutor adaptive
+        networks:
+            - mongodb_net
+        ports:
+            - 27017:27017
+    rabbitmq:
+        image: rabbitmq:3-management-alpine
+        container_name: 'rabbitmq'
+        networks:
+            - mongodb_net
+        ports:
+            - 5672:5672
+            - 15672:15672

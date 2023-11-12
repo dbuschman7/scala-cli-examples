@@ -78,4 +78,6 @@ case class PingLambdaStack(scope: Construct, props: StackProps) extends Stack(sc
   lazy val policies: Map[String, PolicyDocument] = Map()
 
   lazy val managed: Seq[IManagedPolicy] = Seq(vpcAccess)
+
+
 }
